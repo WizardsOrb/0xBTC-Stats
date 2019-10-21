@@ -8,7 +8,7 @@ function addToURL(value){
 
 const version = "v0.1.0";
 
-log('0xBitcoin Stats', version);
+log('BCT STATS', version);
 el('#footerversion').innerHTML = version;
 
 
@@ -19,15 +19,16 @@ const _ZERO_BN = new Eth.BN(0, 10);
 /* contract constants */
 /* todo: pull these from the contract */
 /* todo: move these into some kind of contract helper class */
-const _CONTRACT_NAME = "0xBitcoin";
-const _CONTRACT_SYMBOL = "0xBTC";
-const _BLOCKS_PER_READJUSTMENT = 1024;
-const _CONTRACT_ADDRESS = "0xB6eD7644C69416d67B522e20bC294A9a9B405B31";
+const _CONTRACT_NAME = "Classic Bitcoin Token";
+const _CONTRACT_SYMBOL = "BCT";
+const _BLOCKS_PER_READJUSTMENT = 2016;
+const _CONTRACT_ADDRESS = "0x1be6d61b1103d91f7f86d47e6ca0429259a15ff0";
 const _MINT_TOPIC = "0xcf6fbb9dcea7d07263ab4f5c3a92f53af33dffc421d9d121e1c74b307e68189d";
+const _MINT_TOPIC_TWO = "0x000000000000000000000000bde4e8cf9539dcd3b3064a17e11a58d01376f95b"
 const _MAXIMUM_TARGET_STR = "27606985387162255149739023449108101809804435888681546220650096895197184";  // 2**234
 const _MINIMUM_TARGET = 2**16;
 const _ETH_BLOCKS_PER_REWARD = 60;
-const _HASHRATE_MULTIPLIER = 2**22; /* TODO: calculate this from max_target (https://en.bitcoin.it/wiki/Difficulty) */
+const _HASHRATE_MULTIPLIER = 2**22 * 1e3; /* TODO: calculate this from max_target (https://en.bitcoin.it/wiki/Difficulty) */
 /* contract variable storage locations */
 const _LAST_DIFF_START_BLOCK_INDEX = '6';
 const _ERA_INDEX = '7';
@@ -39,16 +40,16 @@ const _MINIMUM_TARGET_BN = new Eth.BN(_MINIMUM_TARGET);
 const _IDEAL_BLOCK_TIME_SECONDS = _ETH_BLOCKS_PER_REWARD * _SECONDS_PER_ETH_BLOCK;
 
 /* TODO: figure out why it doesn't work w metamask */
-var eth = new Eth(new Eth.HttpProvider("https://mainnet.infura.io/v3/bffcddb94d02462db783eb08d7f97f1f"));
+var eth = new Eth(new Eth.HttpProvider("https://ethereumclassic.network"));
 // if (typeof window.web3 !== 'undefined' && typeof window.web3.currentProvider !== 'undefined') {
 //   var eth = new Eth(window.web3.currentProvider);
 // } else {
 //   var eth = new Eth(new Eth.HttpProvider("https://mainnet.infura.io/MnFOXCPE2oOhWpOCyEBT"));
 //   log("warning: no web3 provider found, using infura.io as backup provider")
 // }
-var _BLOCK_EXPLORER_ADDRESS_URL = 'https://etherscan.io/address/';
-var _BLOCK_EXPLORER_TX_URL = 'https://etherscan.io/tx/';
-var _BLOCK_EXPLORER_BLOCK_URL = 'https://etherscan.io/block/';
+var _BLOCK_EXPLORER_ADDRESS_URL = 'https://blockscout.com/etc/mainnet/address/';
+var _BLOCK_EXPLORER_TX_URL = 'https://blockscout.com/etc/mainnet/tx/';
+var _BLOCK_EXPLORER_BLOCK_URL = 'https://blockscout.com/etc/mainnet/blocks/';
 
 /* colors used by pool names. todo: move to css, still use them for chart.js */
 var pool_colors = {
@@ -295,9 +296,9 @@ function toReadableThousandsLong(num_value, should_add_b_tags) {
     }
   }
   if(num_value < 10) {
-    var num_value_string = num_value.toFixed(1); 
+    var num_value_string = num_value.toFixed(1);
   } else {
-    var num_value_string = num_value.toFixed(0); 
+    var num_value_string = num_value.toFixed(0);
   }
   if(should_add_b_tags) {
     num_value_string = '<b>' + num_value_string + '</b>';
@@ -556,11 +557,14 @@ function updateAllMinerInfo(eth, stats, hours_into_past){
   /* get all mint() transactions in the last N blocks */
   /* more info: https://github.com/ethjs/ethjs/blob/master/docs/user-guide.md#ethgetlogs */
   /* and https://ethereum.stackexchange.com/questions/12950/what-are-event-topics/12951#12951 */
+  //0xcf6fbb9dcea7d07263ab4f5c3a92f53af33dffc421d9d121e1c74b307e68189d
+  //0x000000000000000000000000bde4e8cf9539dcd3b3064a17e11a58d01376f95b
   eth.getLogs({
     fromBlock: start_log_search_at,
     toBlock: last_reward_eth_block,
     address: _CONTRACT_ADDRESS,
-    topics: [_MINT_TOPIC, null],
+    //topics: [_MINT_TOPIC, null],
+    topics: [_MINT_TOPIC, _MINT_TOPIC_TWO],
   })
   .then((result) => {
 
@@ -568,6 +572,7 @@ function updateAllMinerInfo(eth, stats, hours_into_past){
     total_block_count += result.length;
 
     result.forEach(function(transaction){
+      console.log(transaction)
       var tx_hash = transaction['transactionHash'];
       var block_number = parseInt(transaction['blockNumber'].toString());
       var miner_address = getMinerAddressFromTopic(transaction['topics'][1].toString());
@@ -896,5 +901,3 @@ function updateAndDisplayAllStats() {
   createStatsTable();
   loadAllStats();
 }
-
-
